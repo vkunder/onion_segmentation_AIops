@@ -1,0 +1,18 @@
+parameters:
+  epochs: 1
+  batch_size: 4
+
+
+artifacts:
+  artifacts_dir: artifacts
+  model_dir: models
+  plots_dir: plots
+  model_name: model.h5
+  CHECKPOINT_DIR: checkpoints
+
+
+
+log:
+  log_dir: logs_dir
+  general_logs: general_log
+  TENSORBOARD_ROOT_LOG_DIR: tensorboard_logs
