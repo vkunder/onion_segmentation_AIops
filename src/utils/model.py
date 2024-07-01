@@ -28,6 +28,7 @@ from tensorflow.keras.callbacks import TensorBoard
 import datetime
 from tensorflow.keras.callbacks import ReduceLROnPlateau, ModelCheckpoint
 import time
+from tensorflow.keras.layers import GroupNormalization
 
 
 #main utility functions for model
@@ -108,14 +109,14 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(inputs)
-    conv1 = BatchNormalization()(conv1)
+    conv1 = GroupNormalization(groups=8, axis=-1)(conv1)
 
     conv1 = Conv2D(16,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv1)
-    conv1 = BatchNormalization()(conv1)
+    conv1 = GroupNormalization(groups=8, axis=-1)(conv1)
 
     # se
     conv1 = SEModule(conv1, 4, 16)
@@ -126,14 +127,14 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(pool1)
-    conv2 = BatchNormalization()(conv2)
+    conv2 = GroupNormalization(groups=8, axis=-1)(conv2)
 
     conv2 = Conv2D(32,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv2)
-    conv2 = BatchNormalization()(conv2)
+    conv2 = GroupNormalization(groups=8, axis=-1)(conv2)
 
     # se
     conv2 = SEModule(conv2, 8, 32)
@@ -144,14 +145,14 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(pool2)
-    conv3 = BatchNormalization()(conv3)
+    conv3 = GroupNormalization(groups=8, axis=-1)(conv3)
 
     conv3 = Conv2D(64,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv3)
-    conv3 = BatchNormalization()(conv3)
+    conv3 = GroupNormalization(groups=8, axis=-1)(conv3)
 
     # se
     conv3 = SEModule(conv3, 8, 64)
@@ -162,14 +163,14 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(pool3)
-    conv4 = BatchNormalization()(conv4)
+    conv4 = GroupNormalization(groups=8, axis=-1)(conv4)
 
     conv4 = Conv2D(128,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv4)
-    conv4 = BatchNormalization()(conv4)
+    conv4 = GroupNormalization(groups=8, axis=-1)(conv4)
 
     # se
     conv4 = SEModule(conv4, 16, 128)
@@ -181,13 +182,13 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(pool4)
-    conv5 = BatchNormalization()(conv5)
+    conv5 = GroupNormalization(groups=8, axis=-1)(conv5)
     conv5 = Conv2D(256,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv5)
-    conv5 = BatchNormalization()(conv5)
+    conv5 = GroupNormalization(groups=8, axis=-1)(conv5)
 
     # se
     conv5 = SEModule(conv5, 16, 256)
@@ -198,7 +199,7 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                  padding='same',
                  kernel_initializer='he_normal')(UpSampling2D(size=(2,
                                                                     2))(conv5))
-    up6 = BatchNormalization()(up6)
+    up6 = GroupNormalization(groups=8, axis=-1)(up6)
 
     merge6 = concatenate([conv4, up6], axis=3)
     conv6 = Conv2D(128,
@@ -206,14 +207,14 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(merge6)
-    conv6 = BatchNormalization()(conv6)
+    conv6 = GroupNormalization(groups=8, axis=-1)(conv6)
 
     conv6 = Conv2D(128,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv6)
-    conv6 = BatchNormalization()(conv6)
+    conv6 = GroupNormalization(groups=8, axis=-1)(conv6)
 
     # se
     conv6 = SEModule(conv6, 16, 128)
@@ -224,7 +225,7 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                  padding='same',
                  kernel_initializer='he_normal')(UpSampling2D(size=(2,
                                                                     2))(conv6))
-    up7 = BatchNormalization()(up7)
+    up7 = GroupNormalization(groups=8, axis=-1)(up7)
 
     merge7 = concatenate([conv3, up7], axis=3)
     conv7 = Conv2D(64,
@@ -232,14 +233,14 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(merge7)
-    conv7 = BatchNormalization()(conv7)
+    conv7 = GroupNormalization(groups=8, axis=-1)(conv7)
 
     conv7 = Conv2D(64,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv7)
-    conv7 = BatchNormalization()(conv7)
+    conv7 = GroupNormalization(groups=8, axis=-1)(conv7)
 
     # se
     conv7 = SEModule(conv7, 8, 64)
@@ -250,7 +251,7 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                  padding='same',
                  kernel_initializer='he_normal')(UpSampling2D(size=(2,
                                                                     2))(conv7))
-    up8 = BatchNormalization()(up8)
+    up8 = GroupNormalization(groups=8, axis=-1)(up8)
 
     merge8 = concatenate([conv2, up8], axis=3)
     conv8 = Conv2D(32,
@@ -258,14 +259,14 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(merge8)
-    conv8 = BatchNormalization()(conv8)
+    conv8 = GroupNormalization(groups=8, axis=-1)(conv8)
 
     conv8 = Conv2D(32,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv8)
-    conv8 = BatchNormalization()(conv8)
+    conv8 = GroupNormalization(groups=8, axis=-1)(conv8)
 
     # se
     conv8 = SEModule(conv8, 4, 32)
@@ -276,7 +277,7 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                  padding='same',
                  kernel_initializer='he_normal')(UpSampling2D(size=(2,
                                                                     2))(conv8))
-    up9 = BatchNormalization()(up9)
+    up9 = GroupNormalization(groups=8, axis=-1)(up9)
 
     merge9 = concatenate([conv1, up9], axis=3)
     conv9 = Conv2D(16,
@@ -284,20 +285,20 @@ def SEUnet(nClasses, input_height=224, input_width=224):
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(merge9)
-    conv9 = BatchNormalization()(conv9)
+    conv9 = GroupNormalization(groups=8, axis=-1)(conv9)
 
     conv9 = Conv2D(16,
                    3,
                    activation='relu',
                    padding='same',
                    kernel_initializer='he_normal')(conv9)
-    conv9 = BatchNormalization()(conv9)
+    conv9 = GroupNormalization(groups=8, axis=-1)(conv9)
 
     # se
     conv9 = SEModule(conv9, 2, 16)
 
     conv10 = Conv2D(nClasses, (3, 3), padding='same')(conv9)
-    conv10 = BatchNormalization()(conv10)
+    conv10 = GroupNormalization(groups=8, axis=-1)(conv10)
 
     outputHeight = Model(inputs, conv10).output_shape[1]
     outputWidth = Model(inputs, conv10).output_shape[2]
@@ -311,19 +312,18 @@ def SEUnet(nClasses, input_height=224, input_width=224):
 
     return model
 def my_model():
-    model1 = SEUnet(nClasses=5)
+    model1 = SEUnet(nClasses=3)
 
     x = model1.get_layer(index=-3).output
 
     # folder=["Sprout","Black_smut","Rotten","Background"]
-    out0 = Conv2D(2, (1, 1), activation='softmax',name='sprout')(x)
-    out1 = Conv2D(2, (1, 1), activation='softmax',name='peeled')(x)
-    out2 = Conv2D(2, (1, 1), activation='softmax',name='rotten')(x)
-    out3 = Conv2D(2, (1, 1), activation='softmax',name='double')(x)
-    out4 = Conv2D(2, (1, 1), activation='softmax',name='background')(x)
+    out0 = Conv2D(2, (1, 1), activation='softmax',name='peeled')(x)
+    out1 = Conv2D(2, (1, 1), activation='softmax',name='black_smut')(x)
+    out2 = Conv2D(2, (1, 1), activation='softmax',name='background')(x)
+  
 
 
-    model_new = Model(inputs = model1.input,outputs = [out0,out1,out2,out3,out4])
+    model_new = Model(inputs = model1.input,outputs = [out0,out1,out2])
     #print(model_new.summary())
     
 
@@ -340,11 +340,11 @@ def my_model():
 
 
         # Define losses, metrics, and loss weights
-    losses = {"sprout": sm.losses.bce_jaccard_loss, "peeled": sm.losses.bce_jaccard_loss, "rotten": sm.losses.bce_jaccard_loss,"double": sm.losses.bce_jaccard_loss,"background": sm.losses.bce_jaccard_loss}
-    metrics = {"sprout": [iou_score, f1_score,precision,recall], "peeled": [iou_score, f1_score,precision,recall], "rotten": [iou_score, f1_score,precision,recall],"double": [iou_score, f1_score,precision,recall], "background": [iou_score, f1_score,precision,recall]}
-    loss_weights = {"sprout": 1.0, "peeled": 1.0, "rotten": 1.0, "double": 1.0, "background": 2.0}
+    losses = {"peeled": sm.losses.bce_jaccard_loss, "black_smut": sm.losses.bce_jaccard_loss,"background": sm.losses.bce_jaccard_loss}
+    metrics = {"peeled": [iou_score, f1_score,precision,recall],"black_smut": [iou_score, f1_score,precision,recall], "background": [iou_score, f1_score,precision,recall]}
+    loss_weights = {"peeled": 1.0, "black_smut": 0.5, "background": 2.0}
 
-    LR_Reduce_callback = ReduceLROnPlateau(monitor='loss', factor=0.1, patience=10, verbose=1, mode='auto')
+    LR_Reduce_callback = ReduceLROnPlateau(monitor='loss', factor=0.1, patience=5, verbose=1, mode='auto')
     model_ckpt1 = ModelCheckpoint(model_name+'_'+date+'.h5', monitor='loss', save_weights_only=False,save_best_only=True, period=1)
     model_ckpt2 = ModelCheckpoint(model_name+'_'+date+'_weights.h5', monitor='loss', save_weights_only=True,save_best_only=True, period=1)
 
