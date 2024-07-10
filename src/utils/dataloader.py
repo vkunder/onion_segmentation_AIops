@@ -259,8 +259,8 @@ from glob import glob
 from utils.common import read_config
 import argparse
 
-#image_path = '/home/agrograde/Desktop/summer_onion/image_path'
-#image_path = "/home/agrograde/Desktop/12th_june/old_summer_onion/image_path"
+
+#image_path = "/home/agrograde/Desktop/1st_july_2024/image_path"
 image_path = "/home/agrograde/Desktop/4th_mar/test_image_path"
 def preprocessMasks(mask,height,width):
     mask_resized = cv2.threshold(cv2.resize(mask, (height,width)), 50, 1, cv2.THRESH_BINARY)[1]

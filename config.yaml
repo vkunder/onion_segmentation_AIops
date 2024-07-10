@@ -1,6 +1,6 @@
 parameters:
-  epochs: 2
-  batch_size: 2          #8
+  epochs: 20
+  batch_size: 8          #8
 
 
 artifacts:
