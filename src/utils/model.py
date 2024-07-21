@@ -93,10 +93,10 @@ from keras.layers import Layer
 # Custom QuantizeConfig for Conv2D layers
 class ConvQuantizeConfig(QuantizeConfig):
     def get_weights_and_quantizers(self, layer):
-        return [(layer.kernel, LastValueQuantizer(num_bits=4, per_axis=False, symmetric=False, narrow_range=False))]
+        return [(layer.kernel, LastValueQuantizer(num_bits=8, per_axis=False, symmetric=False, narrow_range=False))]
 
     def get_activations_and_quantizers(self, layer):
-        return [(layer.activation, MovingAverageQuantizer(num_bits=4, per_axis=False, symmetric=False, narrow_range=False))]
+        return [(layer.activation, MovingAverageQuantizer(num_bits=8, per_axis=False, symmetric=False, narrow_range=False))]
 
     def set_quantize_weights(self, layer, quantize_weights):
         layer.kernel = quantize_weights[0]
@@ -521,41 +521,42 @@ def SEUnet(nClasses, input_height=224, input_width=224):
 
 
 def my_model():
-    model1 = SEUnet(nClasses=3)
+    model1 = SEUnet(nClasses=5)
 
     x = model1.get_layer(index=-3).output
 
     # folder=["Sprout","Black_smut","Rotten","Background"]
-    out0 = Conv2D(2, (1, 1), activation='softmax',name='peeled')(x)
-    out1 = Conv2D(2, (1, 1), activation='softmax',name='black_smut')(x)
-    out2 = Conv2D(2, (1, 1), activation='softmax',name='background')(x)
+    out0 = Conv2D(2, (1, 1), activation='softmax',name='sprout')(x)
+    out1 = Conv2D(2, (1, 1), activation='softmax',name='peeled')(x)
+    out2 = Conv2D(2, (1, 1), activation='softmax',name='rotten')(x)
+    out3 = Conv2D(2, (1, 1), activation='softmax',name='black_smut')(x)
+    out4 = Conv2D(2, (1, 1), activation='softmax',name='background')(x)
   
 
 
-    model_new = Model(inputs = model1.input,outputs = [out0,out1,out2])
+    model_new = Model(inputs = model1.input,outputs = [out0,out1,out2,out3,out4])
     #print(model_new.summary())
     
     quantized_model = tfmot.quantization.keras.quantize_apply(model_new)
-# model_summary = my_model()
-# print(my_model)
 
-    model_name = 'onin_24th_jan_spplrobg'
-    date = '24thdec2024'
+
+    model_name = 'onin_10th_jul_spplrobg'
+    date = '10thjuly2024'
     learning_rate = 0.001
-        # num_epochs = 20
+ 
 
     opt = Adam(lr=learning_rate)
 
 
 
         # Define losses, metrics, and loss weights
-    losses = {"peeled": sm.losses.bce_jaccard_loss, "black_smut": sm.losses.bce_jaccard_loss,"background": sm.losses.bce_jaccard_loss}
-    metrics = {"peeled": [iou_score, f1_score,precision,recall],"black_smut": [iou_score, f1_score,precision,recall], "background": [iou_score, f1_score,precision,recall]}
-    loss_weights = {"peeled": 1.0, "black_smut": 1.0, "background": 2.0}
+    losses = {"sprout": sm.losses.bce_jaccard_loss,"peeled": sm.losses.bce_jaccard_loss,"rotten": sm.losses.bce_jaccard_loss, "black_smut": sm.losses.bce_jaccard_loss,"background": sm.losses.bce_jaccard_loss}
+    metrics = {"sprout": [iou_score, f1_score,precision,recall],"peeled": [iou_score, f1_score,precision,recall],"rotten": [iou_score, f1_score,precision,recall],"black_smut": [iou_score, f1_score,precision,recall], "background": [iou_score, f1_score,precision,recall]}
+    loss_weights = {"sprout": 1.0,"peeled": 1.0,"rotten":1.0, "black_smut": 0.8, "background": 3.0}
 
-    LR_Reduce_callback = ReduceLROnPlateau(monitor='loss', factor=0.1, patience=5, verbose=1, mode='auto')
-    model_ckpt1 = ModelCheckpoint(model_name+'_'+date+'.h5', monitor='loss', save_weights_only=False,save_best_only=True, period=1) ## WEIGHTS WITH MODEL
-    model_ckpt2 = ModelCheckpoint(model_name+'_'+date+'_weights.h5', monitor='loss', save_weights_only=True,save_best_only=True, period=1) ##ONLY WEIGHTS
+    # LR_Reduce_callback = ReduceLROnPlateau(monitor='loss', factor=0.1, patience=5, verbose=1, mode='auto')
+    # model_ckpt1 = ModelCheckpoint(model_name+'_'+date+'.h5', monitor='loss', save_weights_only=False,save_best_only=True, period=1) ## WEIGHTS WITH MODEL
+    # model_ckpt2 = ModelCheckpoint(model_name+'_'+date+'_weights.h5', monitor='loss', save_weights_only=True,save_best_only=True, period=1) ##ONLY WEIGHTS
 
     quantized_model.compile(optimizer=opt, loss=losses, metrics=metrics)
 

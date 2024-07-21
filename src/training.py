@@ -77,7 +77,7 @@
 #     training(config_path=parsed_args.config)
 
 
-
+### training command    "python src/training.py --config /home/agrograde/Desktop/19th_march/onion_segmentation_AIops/config.yaml"
 from utils.common import read_config
 import argparse
 import os

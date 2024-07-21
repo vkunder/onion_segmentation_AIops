@@ -260,8 +260,8 @@ from utils.common import read_config
 import argparse
 
 
-#image_path = "/home/agrograde/Desktop/1st_july_2024/image_path"
-image_path = "/home/agrograde/Desktop/4th_mar/test_image_path"
+image_path = "/home/agrograde/Desktop/13th_july_2024/image_path"
+#image_path = "/home/agrograde/Desktop/4th_mar/test_image_path"
 def preprocessMasks(mask,height,width):
     mask_resized = cv2.threshold(cv2.resize(mask, (height,width)), 50, 1, cv2.THRESH_BINARY)[1]
     mask_data = np.zeros((height,width,2))
@@ -280,15 +280,15 @@ def preprocessMasks(mask,height,width):
 
 def load_data(path):
     images = sorted(glob(os.path.join(image_path, 'images/*')))
-    #sprout = sorted(glob(os.path.join(image_path, 'Sprout/*')))
+    sprout = sorted(glob(os.path.join(image_path, 'Sprout/*')))
     peeled = sorted(glob(os.path.join(image_path, 'Peeled/*')))
-   # rotten = sorted(glob(os.path.join(image_path, 'Rotten/*')))
+    rotten = sorted(glob(os.path.join(image_path, 'Rotten/*')))
     black_smut = sorted(glob(os.path.join(image_path, 'Black_smut/*')))
     background = sorted(glob(os.path.join(image_path, 'Background/*')))
-    return images,peeled,black_smut,background
+    return images,sprout,peeled,rotten,black_smut,background
     
 
-images,peeled,black_smut,background = load_data(image_path)
+images,sprout,peeled,rotten,black_smut,background = load_data(image_path)
 def read_image(path):
     
     x = cv2.imread(path)
@@ -302,38 +302,44 @@ def read_mask(path):
     return x
     
     
-def preprocess(x, y1, y2, y3):
+def preprocess(x, y1, y2, y3,y4,y5):
 
-    def f(x, y1, y2, y3):
+    def f(x, y1, y2, y3,y4,y5):
         x = x.decode()
         y1 = y1.decode()
         y2 = y2.decode()
         y3 = y3.decode()
+        y4 = y4.decode()
+        y5 = y5.decode()
        
         
         x = read_image(x)
         y1 = read_mask(y1)
         y2 = read_mask(y2)
         y3 = read_mask(y3)
+        y4 = read_mask(y4)
+        y5 = read_mask(y5)
         
         
-        return x, y1, y2, y3
+        return x, y1, y2, y3 ,y4,y5
     
-    images, peeled, black_smut, background = tf.numpy_function(
-        f, [x, y1, y2, y3], 
-        [tf.float32, tf.float32, tf.float32, tf.float32]
+    images,sprout, peeled, rotten ,black_smut, background = tf.numpy_function(
+        f, [x, y1, y2, y3,y4,y5], 
+        [tf.float32, tf.float32, tf.float32,tf.float32,tf.float32,tf.float32]
     )
     
     images.set_shape([224, 224, 3])
+    sprout.set_shape([224, 224, 2])
     peeled.set_shape([224, 224, 2])
+    rotten.set_shape([224, 224, 2])
     black_smut.set_shape([224, 224, 2])
     background.set_shape([224, 224, 2])
 
-    return images, peeled, black_smut, background
+    return images,sprout,peeled,rotten, black_smut, background
 
 
-def tf_dataset(x, y1, y2, y3, batch_size, train_split=0.9, val_split=0.1):
-    dataset = tf.data.Dataset.from_tensor_slices((x, y1, y2, y3))
+def tf_dataset(x, y1, y2, y3, y4 ,y5,batch_size, train_split=0.9, val_split=0.1):
+    dataset = tf.data.Dataset.from_tensor_slices((x, y1, y2, y3,y4,y5))
     dataset = dataset.map(preprocess, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     
     total_samples = len(x)
@@ -368,10 +374,11 @@ BATCH_SIZE = config["parameters"]["batch_size"]
 
 #images,sprout,peeled,rotten,double,background = load_data(image_path)
 def create_dict_datasets(train_dataset, val_dataset):
-    def map_fn(images, peeled, black_smut, background):
+    def map_fn(images,sprout, peeled,rotten, black_smut, background):
         labels_dict = {
-            
+            "sprout":sprout,
             "peeled": peeled,
+            "rotten":rotten,
             "black_smut": black_smut,
             "background": background
         }
@@ -383,64 +390,64 @@ def create_dict_datasets(train_dataset, val_dataset):
     return train_data, val_data
 
 def get_data():
-    images,peeled,black_smut,background = load_data(image_path)
-    (train_dataset, val_dataset) = tf_dataset(images, peeled, black_smut, background, batch_size=BATCH_SIZE, 
-                                           train_split=0.8, val_split=0.1)
+    images,sprout,peeled,rotten,black_smut,background = load_data(image_path)
+    (train_dataset, val_dataset) = tf_dataset(images,sprout, peeled, rotten,black_smut, background, batch_size=BATCH_SIZE, 
+                                           train_split=0.9, val_split=0.1)
     train_data, val_data = create_dict_datasets(train_dataset, val_dataset)
     return train_data,val_data
 
 
 
-import matplotlib.pyplot as plt
-import tensorflow as tf
+# import matplotlib.pyplot as plt
+# import tensorflow as tf
 
 #Define your data loading and preprocessing functions as shown in your previous code snippets
 
 #Assuming you have a function to get your data
 #train_data, val_data = get_data()
 
-def visualize_batch(dataset, num_images=4):
-    """
-    Visualize a batch of images and their corresponding masks.
+# def visualize_batch(dataset, num_images=4):
+#     """
+#     Visualize a batch of images and their corresponding masks.
 
-    Args:
-    - dataset: The dataset to visualize data from.
-    - num_images: The number of images to display.
-    """
-    # Take one batch from the dataset
-    for images, masks in dataset.take(1):
-        # Get the batch size (number of images in the batch)
-        batch_size = images.shape[0]
+#     Args:
+#     - dataset: The dataset to visualize data from.
+#     - num_images: The number of images to display.
+#     """
+#     # Take one batch from the dataset
+#     for images, masks in dataset.take(1):
+#         # Get the batch size (number of images in the batch)
+#         batch_size = images.shape[0]
 
-        # Set the number of images to display
-        num_images = min(num_images, batch_size)
+#         # Set the number of images to display
+#         num_images = min(num_images, batch_size)
 
-        # Create a figure to display the images and masks
-        fig, axes = plt.subplots(num_images, 4, figsize=(15, 5 * num_images))
+#         # Create a figure to display the images and masks
+#         fig, axes = plt.subplots(num_images, 4, figsize=(15, 5 * num_images))
 
-        for i in range(num_images):
-            # Display the image
-            axes[i, 0].imshow(images[i].numpy().astype("uint8"))
-            axes[i, 0].set_title("Image")
-            axes[i, 0].axis("off")
+#         for i in range(num_images):
+#             # Display the image
+#             axes[i, 0].imshow(images[i].numpy().astype("uint8"))
+#             axes[i, 0].set_title("Image")
+#             axes[i, 0].axis("off")
 
-            # Display the peeled mask
-            axes[i, 1].imshow(masks["peeled"][i].numpy()[:, :, 1], cmap="gray")
-            axes[i, 1].set_title("Peeled Mask")
-            axes[i, 1].axis("off")
+#             # Display the peeled mask
+#             axes[i, 1].imshow(masks["peeled"][i].numpy()[:, :, 1], cmap="gray")
+#             axes[i, 1].set_title("Peeled Mask")
+#             axes[i, 1].axis("off")
 
-            # Display the black smut mask
-            axes[i, 2].imshow(masks["black_smut"][i].numpy()[:, :, 1], cmap="gray")
-            axes[i, 2].set_title("Black Smut Mask")
-            axes[i, 2].axis("off")
+#             # Display the black smut mask
+#             axes[i, 2].imshow(masks["black_smut"][i].numpy()[:, :, 1], cmap="gray")
+#             axes[i, 2].set_title("Black Smut Mask")
+#             axes[i, 2].axis("off")
 
-            # Display the background mask
-            axes[i, 3].imshow(masks["background"][i].numpy()[:, :, 1], cmap="gray")
-            axes[i, 3].set_title("Background Mask")
-            axes[i, 3].axis("off")
+#             # Display the background mask
+#             axes[i, 3].imshow(masks["background"][i].numpy()[:, :, 1], cmap="gray")
+#             axes[i, 3].set_title("Background Mask")
+#             axes[i, 3].axis("off")
 
-        plt.tight_layout()
-        plt.show()
+#         plt.tight_layout()
+#         plt.show()
 
-# Visualize a batch of data from the training dataset
-#visualize_batch(train_data)
+# # Visualize a batch of data from the training dataset
+# #visualize_batch(train_data)
