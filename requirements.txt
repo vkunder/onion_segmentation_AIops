@@ -6,3 +6,5 @@ matplotlib
 seaborn
 PyYAML
 opencv-python
+#onnx
+#onnx_runtime

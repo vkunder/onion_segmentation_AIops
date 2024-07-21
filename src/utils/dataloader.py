@@ -236,6 +236,16 @@
 ## fpr 2 classes
 
 
+
+
+
+"""This is dataloader template where data will be processes from the 
+folder and will be preprocessed and will be given to model through model template"""
+
+
+
+
+
 import numpy as np
 import cv2
 import os
@@ -260,11 +270,18 @@ from utils.common import read_config
 import argparse
 
 
-image_path = "/home/agrograde/Desktop/13th_july_2024/image_path"
+image_path = "/home/agrograde/Desktop/13th_july_2024/image_path" ### folder path where data is stored
 #image_path = "/home/agrograde/Desktop/4th_mar/test_image_path"
+
+"""This is preprocessmasks functions where data
+ will be fed 1st and will be preprocessed
+ 
+ here a new binary mask is being created and will be attached to the existing binary mask"""
+
+
 def preprocessMasks(mask,height,width):
-    mask_resized = cv2.threshold(cv2.resize(mask, (height,width)), 50, 1, cv2.THRESH_BINARY)[1]
-    mask_data = np.zeros((height,width,2))
+    mask_resized = cv2.threshold(cv2.resize(mask, (height,width)), 50, 1, cv2.THRESH_BINARY)[1] ## binary mask is being resized and being recreated with pixels value
+    mask_data = np.zeros((height,width,2)) ##  new mask is being created and will be attached to the 1st mask
     
     for i in range(height):
         for j in range(width):
@@ -276,7 +293,10 @@ def preprocessMasks(mask,height,width):
             else:
                 mask_data[i,j,0] = 1
                 
-    return mask_data       #output from the function(height, width, 2)
+    return mask_data       #output from the function(height, width, 2)  ### here we are getting the binary mask for the perticular image
+
+""" here ther function load_data is loading the images and its respective masks from the respective folder mentioned below"""
+
 
 def load_data(path):
     images = sorted(glob(os.path.join(image_path, 'images/*')))
@@ -287,21 +307,26 @@ def load_data(path):
     background = sorted(glob(os.path.join(image_path, 'Background/*')))
     return images,sprout,peeled,rotten,black_smut,background
     
-
+"""here we are calling the function and loading the data"""
 images,sprout,peeled,rotten,black_smut,background = load_data(image_path)
+
+"""This read_image function is responsible for loading images and resize it"""
 def read_image(path):
     
     x = cv2.imread(path)
     x = cv2.resize(x, (224, 224))
     x = x.astype(np.float32)
     return x
+
+
+"""This read_mask function is responsible loading the masks and resize it"""
 def read_mask(path):
     x = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     x = preprocessMasks(x, 224, 224)
     x = x.astype(np.float32)
     return x
     
-    
+"""" This preprocess function is responsible for decoding the byte to regular string """  
 def preprocess(x, y1, y2, y3,y4,y5):
 
     def f(x, y1, y2, y3,y4,y5):
@@ -325,10 +350,10 @@ def preprocess(x, y1, y2, y3,y4,y5):
     
     images,sprout, peeled, rotten ,black_smut, background = tf.numpy_function(
         f, [x, y1, y2, y3,y4,y5], 
-        [tf.float32, tf.float32, tf.float32,tf.float32,tf.float32,tf.float32]
+        [tf.float32, tf.float32, tf.float32,tf.float32,tf.float32,tf.float32] ### here we are getting the images and masks with a proper data type format needed for the data loader
     )
     
-    images.set_shape([224, 224, 3])
+    images.set_shape([224, 224, 3]) ### reevaluating the images and masks shape and rechecking
     sprout.set_shape([224, 224, 2])
     peeled.set_shape([224, 224, 2])
     rotten.set_shape([224, 224, 2])
@@ -337,11 +362,22 @@ def preprocess(x, y1, y2, y3,y4,y5):
 
     return images,sprout,peeled,rotten, black_smut, background
 
+""" Here we are playing the main game finally after the some preprocessing steps we are creating a data loader
+so that insteade of process the whole data in the memory we will process the batch of data into the 
+memory for the training"""
+
 
 def tf_dataset(x, y1, y2, y3, y4 ,y5,batch_size, train_split=0.9, val_split=0.1):
-    dataset = tf.data.Dataset.from_tensor_slices((x, y1, y2, y3,y4,y5))
-    dataset = dataset.map(preprocess, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    dataset = tf.data.Dataset.from_tensor_slices((x, y1, y2, y3,y4,y5)) ## here we are using the tf api to create a datasets in a tuple slicing format
+
+    """num_parallel_calls=tf.data.experimental.AUTOTUNE: This argument specifies the number of parallel calls to be 
+    used when applying the preprocess function. Setting it to tf.data.experimental.AUTOTUNE allows TensorFlow to automatically 
+    determine the optimal number of parallel calls based on
+    system performance and workload. This helps in optimizing the data pipeline for better performance."""
+    dataset = dataset.map(preprocess, num_parallel_calls=tf.data.experimental.AUTOTUNE) ## here the preprocess function is being called .
     
+
+    """here we are splitting the datasets into train and validation"""
     total_samples = len(x)
     train_samples = int(total_samples * train_split)
     val_samples = int(total_samples * val_split)
@@ -350,9 +386,14 @@ def tf_dataset(x, y1, y2, y3, y4 ,y5,batch_size, train_split=0.9, val_split=0.1)
     print("Validation dataset size:", val_samples)
 
     
-    dataset = dataset.shuffle(buffer_size=total_samples, reshuffle_each_iteration=False)
-    
+    dataset = dataset.shuffle(buffer_size=total_samples, reshuffle_each_iteration=False) ### here we are shuffling the datasets.
+    """.batch(batch_size): This method groups the dataset into batches of size batch_size.
+      Batching is important for training machine learning models because it allows you to process multiple 
+      samples simultaneously, which improves computational efficiency and can stabilize gradient updates.
+    """
     train_dataset = dataset.take(train_samples).batch(batch_size).prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+    """ Here data is being prefetched after another batch and being autotuned means according to the perfomance of the system it will do all the prefetched task"""
     val_dataset = dataset.skip(train_samples).take(val_samples).batch(batch_size).prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     
     return train_dataset, val_dataset
@@ -368,11 +409,10 @@ parsed_args = parser.parse_args()
 config_path=parsed_args.config
 config = read_config(config_path)
 BATCH_SIZE = config["parameters"]["batch_size"]    
-
-
-
-
 #images,sprout,peeled,rotten,double,background = load_data(image_path)
+
+"""Here a dict is being created where class is the key and image is the value in the key value pairs and will output the image and masks"""
+
 def create_dict_datasets(train_dataset, val_dataset):
     def map_fn(images,sprout, peeled,rotten, black_smut, background):
         labels_dict = {
@@ -388,6 +428,10 @@ def create_dict_datasets(train_dataset, val_dataset):
     val_data = val_dataset.map(map_fn)
 
     return train_data, val_data
+
+
+"""Here inside get data the whole main functions defined inside the dataloader is being called and data is being preprocessed
+and will be feeding to model after this functions output"""
 
 def get_data():
     images,sprout,peeled,rotten,black_smut,background = load_data(image_path)
