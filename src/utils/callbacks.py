@@ -4,6 +4,8 @@ import time
 import os
 from keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau,ModelCheckpoint
 
+""" here in this template we are """
+
 def get_timestamp(name):
     timestamp = time.asctime().replace(" ","_").replace(":","_")
     unique_name = f"{name}_at_{timestamp}"
@@ -13,7 +15,7 @@ def get_timestamp(name):
     return unique_name
 
 
-
+""" Here we have defined all the callbacks and tensorboard """
 def get_callbacks(config):
     logs = config["log"]
     unique_dir_name = get_timestamp("tb_log")

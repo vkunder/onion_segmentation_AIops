@@ -89,13 +89,16 @@ from utils.callbacks import get_callbacks
 import logging
 
 #model_dir = r"/home/agrograde/Desktop/19th_march/onion_segmentation_AIops/models"
+"""Here we are printing the logs at athe time of training
+
+"""
 
 logging_str = "[%(asctime)s: %(levelname)s: %(module)s] %(message)s"
 log_dir = "training_logs"
 os.makedirs(log_dir,exist_ok=True)
 logging.basicConfig(filename=os.path.join(log_dir,"running_logs.log"),level=logging.INFO,format = logging_str,filemode="a")
 
-
+"""Defining the training function"""
 
 def training(config_path):
     config = read_config(config_path)
@@ -163,7 +166,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", "-c", default="config.yaml", type=str, required=True, help="/home/agrograde/Desktop/19th_march/onion_segmentation_AIops/config.yaml")
     parsed_args = parser.parse_args()
-
+    """ Calling the training function completely to execute training """
     training(config_path=parsed_args.config)
 
 

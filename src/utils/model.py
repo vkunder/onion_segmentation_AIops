@@ -84,7 +84,7 @@ def iou_score(gt, pr, class_weights=1., smooth=1, per_image=True, threshold=None
     iou = tf.reduce_mean(iou * class_weights)
     return iou
 
-
+"""importing libraries"""
 
 
 import tensorflow_model_optimization as tfmot
@@ -92,6 +92,8 @@ from tensorflow_model_optimization.python.core.quantization.keras.quantizers imp
 from tensorflow_model_optimization.python.core.quantization.keras.quantize_config import QuantizeConfig
 from keras.layers import Layer
 
+
+""" here we are defining the ConfigQuantzefig to quantize the perticular layer inside the model """
 # Custom QuantizeConfig for Conv2D layers
 class ConvQuantizeConfig(QuantizeConfig):
     def get_weights_and_quantizers(self, layer):
@@ -114,7 +116,7 @@ class ConvQuantizeConfig(QuantizeConfig):
         return {}
     
 
-
+""" here we are registering the quanization """
 tf.keras.utils.register_keras_serializable(package='QuantizeConfig')(ConvQuantizeConfig)
 
 
@@ -123,6 +125,9 @@ import segmentation_models as sm
 from keras.layers import *
 from keras import layers
 from keras.models import Model
+
+
+""" Simpliy defining the model architecture"""
 
 def SEModule(input, ratio, out_dim):
     # bs, c, h, w
@@ -345,6 +350,10 @@ def SEModule(input, ratio, out_dim):
 #     model.outputWidth = outputWidth
 
 #     return model
+
+""" defining the model architecture by making use of quantization annoate layer and here we are quantizing the specific
+layer by annotating the perticular layer to 8-bit """
+
 def SEUnet(nClasses, input_height=224, input_width=224):
     inputs = Input(shape=(input_height, input_width, 3))
     quantize_annotate_layer = tfmot.quantization.keras.quantize_annotate_layer
@@ -521,7 +530,7 @@ def SEUnet(nClasses, input_height=224, input_width=224):
 
     return model
 
-
+""" here we are defining the model output layer"""
 def my_model():
     model1 = SEUnet(nClasses=5)
 
@@ -539,7 +548,7 @@ def my_model():
     model_new = Model(inputs = model1.input,outputs = [out0,out1,out2,out3,out4])
     #print(model_new.summary())
     
-    quantized_model = tfmot.quantization.keras.quantize_apply(model_new)
+    quantized_model = tfmot.quantization.keras.quantize_apply(model_new) ### applying quantization by calling the finction
 
 
     model_name = 'onin_10th_jul_spplrobg'
@@ -549,7 +558,7 @@ def my_model():
 
     opt = Adam(lr=learning_rate)
 
-
+    """ here we are defining the confusion metrices and loss finctions """
 
         # Define losses, metrics, and loss weights
     losses = {"sprout": sm.losses.bce_jaccard_loss,"peeled": sm.losses.bce_jaccard_loss,"rotten": sm.losses.bce_jaccard_loss, "black_smut": sm.losses.bce_jaccard_loss,"background": sm.losses.bce_jaccard_loss}
@@ -560,10 +569,12 @@ def my_model():
     # model_ckpt1 = ModelCheckpoint(model_name+'_'+date+'.h5', monitor='loss', save_weights_only=False,save_best_only=True, period=1) ## WEIGHTS WITH MODEL
     # model_ckpt2 = ModelCheckpoint(model_name+'_'+date+'_weights.h5', monitor='loss', save_weights_only=True,save_best_only=True, period=1) ##ONLY WEIGHTS
 
-    quantized_model.compile(optimizer=opt, loss=losses, metrics=metrics)
+    quantized_model.compile(optimizer=opt, loss=losses, metrics=metrics) ## 
 
     return quantized_model
 
+
+""" These 2 functions will be giving usique name to the model and saving the model """
 def get_unique_filename(file_name):
     unique_file_name = time.strftime(f"%Y%m%d_%H%M%S_{file_name}")
     return unique_file_name
